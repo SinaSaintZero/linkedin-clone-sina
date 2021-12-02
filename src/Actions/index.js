@@ -56,9 +56,9 @@ export function postArticleAPI (payload){
 
         dispatch(setLoading(true));
 
-        if(payload.image != ''){
+        if(payload.image !== ''){
 
-            const upload = storage.ref(`image/${payload.image.name}`).put(payload.image);
+            const upload = storage.ref(`images/${payload.images.name}`).put(payload.images);
             
             upload.on('state_changed' , 
             snapshot=> {
@@ -107,6 +107,45 @@ export function postArticleAPI (payload){
     };
 };
 
+//--------------------------
+
+export function addPostAPI(payload){
+        return (dispatch) => {
+
+            dispatch(setLoading(true));
+
+        if(payload.image !== ''){
+
+            const promises = payload.images.map((image) =>{
+                const ref = storage.ref().child(`images/${image.name}`)
+                return ref.put(image)
+                .then(()=> ref.getDownloadURL())
+  
+            });
+
+            Promise.all(promises)
+            .then((fileDownloadURLs)=> {
+                db.collection("articles").add({
+
+                    actor: {
+                        user_email_address: payload.user.email,
+                        title: payload.user.displayName,
+                        date: payload.timestamp,
+                        image: payload.user.photoURL
+                    },
+                    video: payload.video,
+                    comments: 0,
+                    description: payload.description,
+                    sharedImg: fileDownloadURLs,
+
+                });
+            }).catch(err => console.log(err));
+            
+        dispatch(setLoading(false));
+        }
+    }
+}
+
 export function getArticleAPI() {
     return (dispatch) => {
         let payload;
@@ -114,7 +153,6 @@ export function getArticleAPI() {
         db.collection('articles').orderBy('actor.date', "desc")
         .onSnapshot((snapshot) => {
             payload= snapshot.docs.map((doc) => doc.data());
-            console.log(payload);
 
             dispatch(getArticles(payload));
         })

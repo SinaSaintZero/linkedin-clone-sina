@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { connect } from 'react-redux';
 import firebase from 'firebase';
-import { postArticleAPI } from '../../Actions/index';
+import { addPostAPI, postArticleAPI, uploadArticlesAPITestMultipleImages } from '../../Actions/index';
 
 import styled from 'styled-components';
 import ReactPlayer from 'react-player';
@@ -9,24 +9,32 @@ import ReactPlayer from 'react-player';
 const PostModal = (props) =>{
 
     const [editorText, setEditorText] = useState("");
-    const [shareImage, setShareImage] = useState("");
+    const [shareImages, setShareImages] = useState([]);
+    const [urls, setUrls]= useState([]);
     const [videoLink, setVideoLink] = useState("");
     const[assetArea, setAssetArea] = useState("");
 
     const handleImageChange = (e) => {
-        const image = e.target.files[0];
 
-        if(image === '' || image ===undefined){
-            alert(`not an image, the file is a ${typeof image }`);
-
-            return;
+        for (let i = 0; i < e.target.files.length; i++) {
+            const newImage = e.target.files[i];
+            newImage['id']= Math.random();
+            setShareImages((prevState) => [...prevState, newImage]);  
         }
 
-        setShareImage(image);
+//         const image = e.target.files[0];
+// 
+//         if(image === '' || image ===undefined){
+//             alert(`not an image, the file is a ${typeof image }`);
+// 
+//             return;
+//         }
+// 
+//         setShareImages(image);
     };
 
     const switchAssetArea = (area) =>{
-        setShareImage("");
+        setShareImages("");
         setVideoLink("");
         setAssetArea(area);
     }
@@ -39,7 +47,7 @@ const PostModal = (props) =>{
         // }
 
         const payload = {
-            image: shareImage,
+            images: shareImages,
             video : videoLink,
             user: props.user,
             description: editorText,
@@ -54,7 +62,7 @@ const PostModal = (props) =>{
     const reset= (e) =>{
         setEditorText('');
         setVideoLink("");
-        setShareImage("");
+        setShareImages("");
         setAssetArea("");
 
         props.handleClick(e);
@@ -90,6 +98,7 @@ const PostModal = (props) =>{
                                 <input type="file" 
                                     accept = 'image/gif, image/jpeg, image/png' 
                                     name='image'
+                                    multiple
                                      id='fileInput'
                                     style={{display:"none"}}
                                     onChange={handleImageChange}
@@ -99,8 +108,9 @@ const PostModal = (props) =>{
                                         style={{cursor:'pointer'}}>  Select an image to share
                                     </label>
                                 </p>
-                                {shareImage && <img src={URL.createObjectURL(shareImage)}/>
+                                {shareImages[0] && <img src={URL.createObjectURL(shareImages[0])}/>
                                 }
+                                {shareImages[1]&& <img src={URL.createObjectURL(shareImages[1])}/>}
                             </UploadImage> 
                             ): (
                             assetArea ==='media' && (
@@ -315,7 +325,7 @@ const mapStateToProps = (state)  => {
 };
 
 const mapDispatchToProps =(dispatch)=> ({
-    postArticle: (payload) => dispatch(postArticleAPI(payload)),
+    postArticle : (payload)=>dispatch(addPostAPI(payload)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(PostModal);
